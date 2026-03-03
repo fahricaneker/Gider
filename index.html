@@ -7,128 +7,107 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f4f7fe;
-            --primary: #0f172a;
-            --accent: #e11d48;
-            --card: #ffffff;
+            --bg: #f8fafc;
+            --red-main: #e11d48;
+            --red-grad: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+            --green: #10b981;
+            --text-main: #1e293b;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            justify-content: center;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0; padding: 15px;
+            overflow-x: hidden; /* Sağa sola kaymayı engeller */
+            display: flex; justify-content: center;
         }
 
-        .container { width: 100%; max-width: 450px; }
+        .container { width: 100%; max-width: 440px; }
 
-        /* Analiz Kartı */
-        .analysis-card {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
+        /* Başlık */
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .app-header h1 { font-size: 22px; font-weight: 800; margin: 0; color: var(--red-main); }
+        .date-chip { background: #fee2e2; color: var(--red-main); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; }
 
-        .total-box { text-align: center; margin-bottom: 20px; }
-        .total-box small { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-        .total-box div { font-size: 32px; font-weight: 900; color: var(--primary); }
+        /* Özet Kartları */
+        .summary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .s-card { background: white; padding: 15px; border-radius: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; text-align: center; }
+        .s-card small { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        .s-card div { font-size: 18px; font-weight: 800; margin-top: 5px; }
 
-        .chart-row {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            min-height: 150px;
-        }
+        /* Grafik Kartı */
+        .chart-card { background: white; border-radius: 35px; padding: 25px; box-shadow: 0 4px 25px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        .chart-box { position: relative; width: 100%; max-width: 210px; height: 210px; margin: 0 auto 15px auto; }
+        .chart-inner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .chart-inner b { font-size: 20px; font-weight: 800; display: block; }
 
-        .chart-box { width: 130px; height: 130px; flex-shrink: 0; }
-        
-        /* Renk Anahtarı Listesi */
-        .legend-box {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 140px;
-            overflow-y: auto;
-        }
+        /* Renkli Lejant (Yana Kayar) */
+        .chip-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .chip-scroll::-webkit-scrollbar { display: none; }
+        .chip { background: #f8fafc; padding: 8px 12px; border-radius: 12px; white-space: nowrap; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; border: 1px solid #f1f5f9; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+        /* Giriş Formu */
+        .form-area { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        select, input { width: 100%; background: white; border: 2px solid #f1f5f9; padding: 14px; border-radius: 18px; font-size: 14px; font-weight: 600; outline: none; }
+        .btn-add { background: var(--red-grad); color: white; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 20px rgba(225, 29, 72, 0.2); }
 
-        .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-        .legend-name { color: #64748b; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .legend-val { color: var(--primary); }
-
-        /* Giriş ve Diğerleri */
-        .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        select { padding: 12px; border-radius: 12px; border: none; font-weight: 700; background: var(--card); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-
-        .input-card { background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 20px; }
-        input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #e2e8f0; box-sizing: border-box; font-size: 14px; }
-        .btn-add { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 800; cursor: pointer; }
-
-        .expense-item {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 18px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid var(--accent);
-        }
-        .ex-info b { font-size: 14px; display: block; }
-        .ex-info small { font-size: 11px; color: #94a3b8; }
-        .ex-amt { text-align: right; font-weight: 800; color: var(--accent); }
-        .btn-del { border: none; background: none; color: #cbd5e1; font-size: 10px; font-weight: 800; cursor: pointer; padding: 0; }
+        /* Liste */
+        .item { background: white; padding: 15px 18px; border-radius: 22px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.01); }
+        .item-info b { font-size: 14px; display: block; }
+        .btn-del { border: none; background: #fff1f2; color: var(--red-main); font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="analysis-card">
-        <div class="total-box">
-            <small id="ayLabel">MART GİDERLERİ</small>
-            <div id="resTotal">₺0</div>
+    <div class="app-header">
+        <h1>Mil Finans</h1>
+        <div class="date-chip" id="topDate">MART 2026</div>
+    </div>
+
+    <div class="summary-row">
+        <div class="s-card">
+            <small>GELİR</small>
+            <div id="resGelir" style="color:var(--green)">₺0</div>
         </div>
-        
-        <div class="chart-row">
-            <div class="chart-box">
-                <canvas id="mainChart"></canvas>
+        <div class="s-card">
+            <small>GİDER</small>
+            <div id="resGider" style="color:var(--red-main)">₺0</div>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-box">
+            <canvas id="mainChart"></canvas>
+            <div class="chart-inner">
+                <small style="color:#94a3b8; font-weight:700; font-size:10px;">NET KASA</small>
+                <b id="resNet">₺0</b>
             </div>
-            <div id="legend" class="legend-box">
-                </div>
         </div>
+        <div id="chipBox" class="chip-scroll"></div>
     </div>
 
-    <div class="filters">
-        <select id="fMonth" onchange="loadData()">
-            <option value="1">Ocak</option><option value="2">Şubat</option><option value="3">Mart</option>
-            <option value="4">Nisan</option><option value="5">Mayıs</option><option value="6">Haziran</option>
-            <option value="7">Temmuz</option><option value="8">Ağustos</option><option value="9">Eylül</option>
-            <option value="10">Ekim</option><option value="11">Kasım</option><option value="12">Aralık</option>
-        </select>
-        <select id="fYear" onchange="loadData()"></select>
+    <div class="form-area">
+        <div class="row">
+            <select id="fMonth" onchange="loadData()"></select>
+            <select id="fYear" onchange="loadData()"></select>
+        </div>
+        <div class="row" style="grid-template-columns: 1.6fr 1fr;">
+            <input type="text" id="gDesc" placeholder="Harcama Adı">
+            <input type="number" id="gAmount" placeholder="Tutar">
+        </div>
+        <button class="btn-add" onclick="addExpense()">Gideri Kaydet</button>
     </div>
 
-    <div class="input-card">
-        <input type="text" id="gDesc" placeholder="Harcama Başlığı (KİRA, MARKET...)">
-        <input type="number" id="gAmount" placeholder="Tutar (₺)">
-        <button class="btn-add" onclick="addExpense()">SİSTEME İŞLE</button>
-    </div>
-
-    <div id="expenseList"></div>
+    <div id="list"></div>
 </div>
 
 <script>
@@ -146,94 +125,69 @@
     const db = firebase.database();
     const now = new Date();
     let myChart;
-    const colors = ['#0f172a', '#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+    
+    // Renkli palet (Kırmızı, Mavi, Yeşil, Turuncu, Mor, Turkuaz, Amber)
+    const multiColors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1'];
 
-    const yr = document.getElementById('fYear');
-    for(let i = 2024; i <= 2027; i++) {
-        let opt = document.createElement('option');
-        opt.value = i; opt.innerHTML = i;
-        if(i === now.getFullYear()) opt.selected = true;
-        yr.appendChild(opt);
-    }
-    document.getElementById('fMonth').value = now.getMonth() + 1;
+    const mSel = document.getElementById('fMonth');
+    const aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    aylar.forEach((ay, i) => { mSel.innerHTML += `<option value="${i+1}" ${i === now.getMonth() ? 'selected' : ''}>${ay}</option>`; });
+    const ySel = document.getElementById('fYear');
+    for(let i = 2024; i <= 2027; i++) { ySel.innerHTML += `<option value="${i}" ${i === now.getFullYear() ? 'selected' : ''}>${i}</option>`; }
 
     function addExpense() {
         const desc = document.getElementById('gDesc').value.trim().toUpperCase();
         const amt = parseFloat(document.getElementById('gAmount').value) || 0;
-        const m = parseInt(document.getElementById('fMonth').value);
-        const y = parseInt(document.getElementById('fYear').value);
         if(!desc || amt <= 0) return;
-        
         db.ref("giderler/" + Date.now()).set({
-            desc, amount: amt, m, y,
+            desc, amount: amt, m: parseInt(mSel.value), y: parseInt(ySel.value),
             date: new Date().toLocaleDateString('tr-TR', {day:'numeric', month:'short'})
-        }).then(() => {
-            document.getElementById('gDesc').value = '';
-            document.getElementById('gAmount').value = '';
-        });
+        }).then(() => { document.getElementById('gDesc').value = ''; document.getElementById('gAmount').value = ''; });
     }
 
-    function render(data) {
-        const selM = parseInt(document.getElementById('fMonth').value);
-        const selY = parseInt(document.getElementById('fYear').value);
-        const list = document.getElementById('expenseList');
-        const legend = document.getElementById('legend');
-        list.innerHTML = ''; legend.innerHTML = '';
+    function loadData() {
+        db.ref().on("value", (snap) => {
+            const data = snap.val();
+            const selM = parseInt(mSel.value);
+            const selY = parseInt(ySel.value);
+            let tGelir = 0, tGider = 0, stats = {};
+            const listDiv = document.getElementById('list');
+            const chipDiv = document.getElementById('chipBox');
+            listDiv.innerHTML = ''; chipDiv.innerHTML = '';
 
-        let total = 0; let stats = {};
+            if(data?.isler) Object.values(data.isler).forEach(j => { if(j.m === selM && j.y === selY) tGelir += (parseFloat(j.paid) || 0); });
+            if(data?.giderler) {
+                Object.entries(data.giderler).reverse().forEach(([id, g]) => {
+                    if(g.m === selM && g.y === selY) {
+                        tGider += g.amount;
+                        stats[g.desc] = (stats[g.desc] || 0) + g.amount;
+                        listDiv.innerHTML += `<div class="item"><div><b>${g.desc}</b><small style="color:#94a3b8">${g.date}</small></div><div style="text-align:right"><b>₺${g.amount.toLocaleString()}</b><br><button class="btn-del" onclick="del('${id}')">SİL</button></div></div>`;
+                    }
+                });
+            }
 
-        if(data) {
-            Object.entries(data).reverse().forEach(([id, g]) => {
-                if(g.m === selM && g.y === selY) {
-                    total += g.amount;
-                    stats[g.desc] = (stats[g.desc] || 0) + g.amount;
-                    list.innerHTML += `
-                        <div class="expense-item">
-                            <div class="ex-info"><b>${g.desc}</b><small>${g.date}</small></div>
-                            <div class="ex-amt">₺${g.amount.toLocaleString()}<br><button class="btn-del" onclick="del('${id}')">SİL</button></div>
-                        </div>`;
-                }
+            document.getElementById('resGelir').innerText = "₺" + tGelir.toLocaleString();
+            document.getElementById('resGider').innerText = "₺" + tGider.toLocaleString();
+            const net = tGelir - tGider;
+            document.getElementById('resNet').innerText = "₺" + net.toLocaleString();
+            document.getElementById('resNet').style.color = net < 0 ? 'var(--red-main)' : 'var(--green)';
+            document.getElementById('topDate').innerText = aylar[selM-1].toUpperCase() + " " + selY;
+
+            if(myChart) myChart.destroy();
+            myChart = new Chart(document.getElementById('mainChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: multiColors, borderWidth: 3, borderColor: '#fff' }] },
+                options: { cutout: '85%', plugins: { legend: { display: false } } }
             });
-        }
 
-        document.getElementById('resTotal').innerText = "₺" + total.toLocaleString();
-        const aylar = ["", "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"];
-        document.getElementById('ayLabel').innerText = aylar[selM] + " GİDERLERİ";
-
-        updateUI(stats);
-    }
-
-    function updateUI(stats) {
-        const labels = Object.keys(stats);
-        const vals = Object.values(stats);
-        const legend = document.getElementById('legend');
-
-        if(myChart) myChart.destroy();
-        
-        myChart = new Chart(document.getElementById('mainChart'), {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0 }]
-            },
-            options: { cutout: '75%', plugins: { legend: { display: false } } }
-        });
-
-        labels.forEach((name, i) => {
-            legend.innerHTML += `
-                <div class="legend-item">
-                    <div class="dot" style="background:${colors[i % colors.length]}"></div>
-                    <div class="legend-name">${name}</div>
-                    <div class="legend-val">₺${vals[i].toLocaleString()}</div>
-                </div>`;
+            Object.entries(stats).forEach(([name, val], i) => {
+                chipDiv.innerHTML += `<div class="chip"><div class="dot" style="background:${multiColors[i % multiColors.length]}"></div>${name}: ₺${val.toLocaleString()}</div>`;
+            });
         });
     }
 
     function del(id) { if(confirm("Silinsin mi?")) db.ref("giderler/" + id).remove(); }
-    function loadData() { db.ref("giderler").on("value", (snap) => render(snap.val())); }
-
     loadData();
 </script>
-
 </body>
 </html>
